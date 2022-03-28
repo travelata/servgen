@@ -1,0 +1,53 @@
+package storage
+
+import (
+	"encoding/json"
+	"github.com/travelata/{{.service.name}}/domain"
+	kitStorage "github.com/travelata/kit/db"
+)
+
+func (a *adapterImpl) toSampleDto(t *domain.Sample) *sample {
+	if t == nil {
+		return nil
+	}
+
+	dto := &sample{
+		BaseDto: kitStorage.BaseDto{
+			CreatedAt: t.CreatedAt,
+			UpdatedAt: t.UpdatedAt,
+			DeletedAt: t.DeletedAt,
+		},
+		Id:        t.Id,
+		Name:      t.Name,
+	}
+
+	var detailsBytes []byte
+	detailsBytes, _ = json.Marshal(t)
+	dto.Details = string(detailsBytes)
+
+	return dto
+}
+
+func (a *adapterImpl) toSampleIndex(t *domain.Sample) *iSample {
+	return &iSample{
+		Name:          t.Name,
+		Deleted:       t.DeletedAt != nil,
+	}
+}
+
+func (a *adapterImpl) toSampleDomain(dto *sample) *domain.Sample {
+	if dto == nil {
+		return nil
+	}
+	cl := &domain.Sample{}
+	_ = json.Unmarshal([]byte(dto.Details), cl)
+	return cl
+}
+
+func (a *adapterImpl) toSamplesDomain(dtos []*sample) []*domain.Sample {
+	var r []*domain.Sample
+	for _, dto := range dtos {
+		r = append(r, a.toSampleDomain(dto))
+	}
+	return r
+}

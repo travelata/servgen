@@ -1,0 +1,122 @@
+//+build integration
+
+package storage
+
+import (
+	"context"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
+	"github.com/travelata/kit"
+	kitContext "github.com/travelata/kit/context"
+	"github.com/travelata/{{.service.name}}/config"
+	"github.com/travelata/{{.service.name}}/domain"
+	"testing"
+	"time"
+)
+
+type {{.service.name}}StorageTestSuite struct {
+	suite.Suite
+	storage       domain.{{Title .service.name}}Storage
+	ctx           context.Context
+	defaultSample *domain.Sample
+}
+
+// SetupSuite is called once for a suite
+func (s *{{.service.name}}StorageTestSuite) SetupSuite() {
+
+	// setup context
+	s.ctx = kitContext.NewRequestCtx().Test().ToContext(context.Background())
+
+	// load config
+	cfg, err := config.Load()
+	if err != nil {
+		s.T().Fatal(err)
+	}
+
+	// disable applying migrations
+	cfg.Storages.Database.MigPath = ""
+
+	// initialize adapter
+	a := NewAdapter()
+	err = a.Init(cfg.Storages)
+	if err != nil {
+		s.T().Fatal(err)
+	}
+	s.storage = a
+}
+
+// SetupTest is called for each test
+func (s *{{.service.name}}StorageTestSuite) SetupTest() {
+	now := time.Now().UTC()
+	id := kit.NewId()
+	s.defaultSample = &domain.Sample{
+		Id:        id,
+		Name:      "name",
+		CreatedAt: now,
+		UpdatedAt: now,
+		DeletedAt: nil,
+	}
+}
+
+func TestSuite(t *testing.T) {
+	suite.Run(t, new({{.service.name}}StorageTestSuite))
+}
+
+func (s *{{.service.name}}StorageTestSuite) Test_CreateSample_GetFromDbAndCache() {
+
+	// create a task
+	expected := s.defaultSample
+	err := s.storage.CreateSample(s.ctx, expected)
+	if err != nil {
+		s.T().Fatal(err)
+	}
+
+	// get Sample by id
+	f, actual, err := s.storage.GetSample(s.ctx, expected.Id)
+	if !f || err != nil {
+		s.T().Fatal()
+	}
+	assert.Equal(s.T(), expected, actual)
+
+	// wait for async caching
+	time.Sleep(time.Millisecond * 100)
+
+	// get Task by id again (cache hit)
+	f, actual, err = s.storage.GetSample(s.ctx, expected.Id)
+	if !f || err != nil {
+		s.T().Fatal()
+	}
+	assert.Equal(s.T(), expected, actual)
+}
+
+func (s *{{.service.name}}StorageTestSuite) TestUpdateSample() {
+
+	// create a sample
+	expected := s.defaultSample
+	err := s.storage.CreateSample(s.ctx, expected)
+	if err != nil {
+		s.T().Fatal(err)
+	}
+
+	// get Task by id
+	_, actual, err := s.storage.GetSample(s.ctx, expected.Id)
+	if err != nil {
+		s.T().Fatal()
+	}
+	assert.NotEmpty(s.T(), actual.Id)
+
+	// update sample
+	actual.Name = "another name"
+	err = s.storage.UpdateSample(s.ctx, actual)
+	if err != nil {
+		s.T().Fatal(err)
+	}
+
+	// get Sample by id
+	_, actual, err = s.storage.GetSample(s.ctx, expected.Id)
+	if err != nil {
+		s.T().Fatal()
+	}
+	assert.NotEmpty(s.T(), actual.Id)
+	assert.Equal(s.T(), actual.Name, "another name")
+}

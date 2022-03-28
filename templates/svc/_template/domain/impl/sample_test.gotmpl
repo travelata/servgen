@@ -1,0 +1,60 @@
+package impl
+
+import (
+	"context"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/suite"
+	kitContext "github.com/travelata/kit/context"
+	kitTest "github.com/travelata/kit/test"
+	"github.com/travelata/{{.service.name}}/domain"
+	"github.com/travelata/{{.service.name}}/mocks"
+	pb "github.com/travelata/{{.service.name}}/proto"
+	"testing"
+)
+
+type sampleTestSuite struct {
+	suite.Suite
+	storage           *mocks.{{Title .service.name}}Storage
+	anotherRepository *mocks.AnotherServiceRepository
+	sampleService     domain.SampleService
+	ctx               context.Context
+}
+
+func (s *sampleTestSuite) SetupSuite() {
+	s.storage = &mocks.{{Title .service.name}}Storage{}
+	s.anotherRepository = &mocks.AnotherServiceRepository{}
+	s.ctx = kitContext.NewRequestCtx().Test().ToContext(context.Background())
+}
+
+func (s *sampleTestSuite) SetupTest() {
+	s.storage.ExpectedCalls = nil
+	s.storage.On("CreateSample", mock.AnythingOfType("*context.valueCtx"), mock.AnythingOfType("*domain.Sample")).Return(nil)
+	s.storage.On("UpdateSample", mock.AnythingOfType("*context.valueCtx"), mock.AnythingOfType("*domain.Sample")).Return(nil)
+
+	s.anotherRepository.ExpectedCalls = nil
+	s.anotherRepository.On("Do", mock.AnythingOfType("*context.valueCtx")).Return(nil)
+
+	s.sampleService = NewSampleService(s.storage, s.anotherRepository, nil)
+}
+
+func TestSampleSuite(t *testing.T) {
+	suite.Run(t, new(sampleTestSuite))
+}
+
+func (s *sampleTestSuite) Test_Create_WhenEmptyName_Fail() {
+	_, err := s.sampleService.Create(s.ctx, &domain.Sample{})
+	kitTest.AssertAppErr(s.T(), err, pb.ErrCodeSampleInvalidName)
+}
+
+func (s *sampleTestSuite) Test_Create_Ok() {
+	sample, err := s.sampleService.Create(s.ctx, &domain.Sample{
+		Name: "name",
+	})
+	if err != nil {
+		s.T().Fatal(err)
+	}
+	assert.NotEmpty(s.T(), sample)
+	assert.NotEmpty(s.T(), sample.Id)
+	assert.Equal(s.T(), "name", sample.Name)
+}

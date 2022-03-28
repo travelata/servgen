@@ -1,0 +1,16 @@
+{
+  "service": {
+    "name": "service",
+    "protoVersion": "v0.1.1-dev20210804-1610",
+    "kitVersion": "v0.0.1-dev20220219-1310",
+    "grpc": {
+      "server": {
+        "port": "51050"
+      }
+    }
+  },
+  "author": {
+    "name": "exluap",
+    "email": "exluap@icloud.com"
+  }
+}

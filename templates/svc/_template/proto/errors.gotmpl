@@ -1,0 +1,15 @@
+package {{.service.name}}
+
+const (
+	ErrCodeSampleInvalidName     = "{{ToUpper .service.name}}-001"
+	ErrCodeSampleIdEmpty         = "{{ToUpper .service.name}}-002"
+	ErrCodeSampleNotFound        = "{{ToUpper .service.name}}-003"
+	ErrCodeSampleDeleted         = "{{ToUpper .service.name}}-004"
+	ErrCodeSampleStorageCreate   = "{{ToUpper .service.name}}-005"
+	ErrCodeSampleStorageGetDb    = "{{ToUpper .service.name}}-006"
+	ErrCodeSampleStorageGetCache = "{{ToUpper .service.name}}-007"
+	ErrCodeSampleStorageGetIds   = "{{ToUpper .service.name}}-008"
+	ErrCodeSampleStorageSetCache = "{{ToUpper .service.name}}-009"
+	ErrCodeSampleStorageUpdate   = "{{ToUpper .service.name}}-010"
+	ErrCodeSampleIndexSearch     = "{{ToUpper .service.name}}-011"
+)
